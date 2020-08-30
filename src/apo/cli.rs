@@ -27,6 +27,13 @@ pub fn build_cli() -> App<'static, 'static> {
                 .long("month")
                 .takes_value(true)
         )
+        .arg(//week
+			Arg::with_name("week")
+                .help("set week")
+                .short("w")
+                .long("week")
+                .takes_value(true)
+        )
         .arg(//day
 			Arg::with_name("day")
                 .help("set Day - prefix +/- is relative sector")
