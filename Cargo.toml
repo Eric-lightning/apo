@@ -1,0 +1,29 @@
+[package]
+name = "apo"
+version = "0.1.0"
+authors = ["Eric-lightning <19676712+Eric-lightning@users.noreply.github.com>"]
+description = "termBased Schedule Manager with git-based sync and Simple editable."
+edition = "2018"
+build = "build.rs"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# apo cmd
+[[bin]]
+name = "apo"
+path = "src/apo/main.rs"
+
+# Doing by day
+[[bin]]
+name = "dbd"
+path = "src/dbd/main.rs"
+
+
+[dependencies]
+clap = "2.33.3"
+chrono = "0.4.6"
+
+[build-dependencies]
+clap = "2.33.3"
+chrono = "0.4.6"
