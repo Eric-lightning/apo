@@ -2,6 +2,8 @@
 extern crate clap; // args analyze library.
 mod cli; // imp cli module.
 
+use std::env;
+
 use chrono::{TimeZone, Weekday, ParseResult,Duration};
 use chrono::prelude::{DateTime, Utc, Local, Datelike, Timelike};
 use chrono::offset::FixedOffset;
@@ -10,15 +12,17 @@ fn main() {
     let _matches = cli::build_cli().get_matches(); // Clap Args Analyzer.
     //println!("Invalid Argments!");
     //process::exit(1);
-
-    let setting = Setting {
-        files: "~/.apo"
+    let keyword_apo_path = "APO_PATH";
+    let default_apo_path = "~/.apo";
+    let defined_apo_path = match std::env::var(keyword_apo_path) {
+        Ok(o)  => o,
+        Err(e) => {
+            println!("Info: No defined in env_var 'APO_PATH', will use `~/.apo`.");
+            default_apo_path.to_string()
+        }
     };
+    //println!("def_var: {}",defined_apo_path); // DEBUG: Print def_apo_path
 
-    // TODO:
-    // 1. FILE Exist
-    // 2. TRUE:  FILE READ
-    // 3. FALSE: DEFAULT CONFIG WRITE
     // 4. DATE DEF
     // 5. LOAD File
     // 6. Parse File
