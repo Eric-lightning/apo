@@ -10,6 +10,21 @@ fn main() {
     let _matches = cli::build_cli().get_matches(); // Clap Args Analyzer.
     //println!("Invalid Argments!");
     //process::exit(1);
+
+    let setting = Setting {
+        files: "~/.apo"
+    };
+
+    // TODO:
+    // 1. FILE Exist
+    // 2. TRUE:  FILE READ
+    // 3. FALSE: DEFAULT CONFIG WRITE
+    // 4. DATE DEF
+    // 5. LOAD File
+    // 6. Parse File
+    // 7. OutputOpts
+    // 8. STDOUT
+
     let mut date: DateTime<Local> = Local::now();
 
     if let Some(o) = _matches.value_of("day") {
