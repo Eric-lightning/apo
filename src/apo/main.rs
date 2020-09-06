@@ -85,7 +85,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         //
         let time = cols_control.next().unwrap();
         inner_map.insert("time",time.to_string());
-        let times: Vec<&str> = time.split(":").collect();
+        let times: Vec<&str> = time.split(":").collect(); // TODO: META Date support! ALL,MRG,DAY,NGT,TASK
 
         let time_h_num: i64 = times.get(0).unwrap().parse().unwrap();
         let time_m_num: i64 = times.get(1).unwrap().parse().unwrap();
