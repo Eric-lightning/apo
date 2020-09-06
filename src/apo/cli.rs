@@ -1,4 +1,11 @@
-use clap::{App,AppSettings,Arg,ArgGroup,SubCommand};
+/* TODO:
+ * - ArgGroups Enable. (e.g. --json,--tsv,--csv,--raw is same group)
+ *
+ *
+ *
+ */
+
+use clap::{App,AppSettings,Arg,/* ArgGroup, */SubCommand};
 
 pub fn build_cli() -> App<'static, 'static> {
     app_from_crate!()
@@ -10,7 +17,8 @@ pub fn build_cli() -> App<'static, 'static> {
             "Next      -n --next      'List Only Next Apointment'
              Previous  -p --prsevious 'List Only Previous Apointment'
              PrintRAW  -1 --raw       'Print RAW'
-             PrintCSV  -c --csv       'Print CSV style (No Quoted)'
+             PrintCSV  -c --csv       'Print CSV style'
+             PrintTSV  -t --tsv       'Print TSV style'
              PrintJSON -j --json      'Print JSON Style (beta)'"
         )
         .arg(//year

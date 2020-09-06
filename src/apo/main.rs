@@ -3,32 +3,31 @@
  * Author: Eric-lightning <y.nakagawa at. eric-lightning.info
  *
  * TODO:
- * - Parse Loaded Files
- * - OutputOpt e.g. JSON,CSV
- * = Stdout with Colornize and Richstyle.
+ * - Stdout with Colornize and Richstyle.
  *
  */
 
 #[macro_use]
 extern crate clap; // args analyze library.
 mod cli; // imp cli module.
-
 use std::env;
 use std::process;
 use std::fs::File;
 use std::string::String;
-use std::io::{self, BufRead, BufReader, Read};
-use chrono::{TimeZone, Weekday, ParseResult,Duration};
-use chrono::prelude::{DateTime, Utc, Local, Datelike, Timelike};
-use chrono::offset::FixedOffset;
+use std::collections::HashMap;
+use std::collections::BTreeMap;
+use std::io::{BufRead, BufReader};
+use chrono::{TimeZone,Duration};
+use chrono::prelude::{DateTime, Local, Datelike};
 
-fn main() -> Result<(), Box<std::error::Error>> {
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _matches = cli::build_cli().get_matches(); // Clap Args Analyzer.
     ////////////////////////////////////////////////////////////////////
     // GET ENV HOME
     let env_home = match env::var("HOME") {
         Ok(o)  => o,
-        Err(e) => {
+        Err(_e) => {
             println!("Err: env::HOME is not set.");
             process::exit(1);
         }
@@ -39,7 +38,7 @@ fn main() -> Result<(), Box<std::error::Error>> {
     let default_apo_path = env_home + "/.apo";
     let defined_apo_path = match env::var(keyword_apo_path) {
         Ok(o)  => o,
-        Err(e) => {
+        Err(_e) => {
             println!("Info: No defined in env_var 'APO_PATH', will use `~/.apo`.");
             default_apo_path.to_string()
         }
@@ -66,37 +65,141 @@ fn main() -> Result<(), Box<std::error::Error>> {
         else if prefix_one_char(o) == '-' { date = date + Duration::weeks(0 - skip_one_str_to_i64(o)); }
         else { date = Local.ymd(o.parse().unwrap(), date.month(), date.day()).and_hms(0,00,00); }
     };
+
+
     ////////////////////////////////////////////////////////////////////////
     // Define File
-    let file_path = default_apo_path.to_string() + "/"
+    let file_path = defined_apo_path.to_string() + "/"
         + &format!("{:04}",date.year() ).to_string() + "/"     // Year(>=CE) & Zero-Padding
         + &format!("{:02}",date.month()).to_string() + "/"     // Month(1-12)& Zero-Padding
         + &format!("{:02}",date.day()  ).to_string() + ".apo"; // Day(1-31)  & Zerp-Padding
     ////////////////////////////////////////////////////////////////////////
     // Read
+    let mut apo_datas = BTreeMap::new();
     for line_res in BufReader::new(File::open(file_path)?).lines() {
+        let mut inner_map = HashMap::new();
+        //
         let line  = line_res?;
-        println!("{}",line);
         let cols: Vec<&str>  = line.split_whitespace().collect();
         let mut cols_control = cols.iter();
-        let time  = cols_control.next().unwrap();
-        let flags = cols_control.next().unwrap();
-        let mut texts = cols_control.next().unwrap().to_string();
+        //
+        let time = cols_control.next().unwrap();
+        inner_map.insert("time",time.to_string());
+        let times: Vec<&str> = time.split(":").collect();
+
+        let time_h_num: i64 = times.get(0).unwrap().parse().unwrap();
+        let time_m_num: i64 = times.get(1).unwrap().parse().unwrap();
+        let time_sum_num: i64 = time_h_num * 60 + time_m_num;
+        //
+        let flags: Vec<char> = cols_control.next().unwrap().chars().collect();
+        let flag_type = flags.get(0).unwrap().to_digit(10).unwrap();
+        let flag_impt = flags.get(1).unwrap().to_digit(10).unwrap();
+        let flag_recs = flags.get(2).unwrap().to_digit(10).unwrap();
+
+        if flag_type == 0 { inner_map.insert("type"     ,"disable".to_string());}
+        if flag_type == 1 { inner_map.insert("type"     ,"schedule".to_string());}
+        if flag_type == 2 { inner_map.insert("type"     ,"reminder".to_string());}
+        if flag_type == 3 { inner_map.insert("type"     ,"deadline".to_string());}
+        if flag_impt == 0 { inner_map.insert("important","false".to_string());}
+        if flag_impt == 1 { inner_map.insert("important","true".to_string());}
+        if flag_recs == 0 { inner_map.insert("recurse"  ,"false".to_string());}
+        if flag_recs == 1 { inner_map.insert("recurse"  ,"true".to_string());}
+
+ let mut text_formating;
+        text_formating = String::new();
         let mut next  = cols_control.next();
+        text_formating += next.unwrap();
+        next  = cols_control.next();
         while None != next {
-            texts.push(' ');
-            texts.push_str(next.unwrap());
+            text_formating += " ";
+            text_formating += next.unwrap();
             next = cols_control.next();
         }
-        println!("time:  {}", time.to_string());
-        println!("flags: {}",flags);
-        println!("texts: {}",texts);
-
-        //let = white_space_array.next();
+        inner_map.insert("texts",text_formating);
+        //
+        apo_datas.insert(time_sum_num,inner_map);
+        ///////////////////////
+    }/*
+    for (key, val) in apo_datas {
+        println!("{} : {} -> {}", key, val.get("time").unwrap(), val.get("texts").unwrap());
+    }*/
+    if _matches.is_present("json") {
+        let mut json_str = String::new();
+        json_str += "{\n";
+        // TODO:キーなしHashMapに変更。で
+        let jb_open  = "\": {\n";
+        let jb_close = "\n},";
+        let jb_line = ",\n";
+        let dquote  = "\"";
+        for (_key,val) in &apo_datas {
+            json_str += dquote;
+            json_str += val.get("time").unwrap();
+            json_str += jb_open;
+            json_str += "\"type\": ";
+            json_str += dquote;
+            json_str += val.get("type").unwrap();
+            json_str += dquote;
+            json_str += jb_line;
+            json_str += "\"important\": ";
+            json_str += val.get("important").unwrap();
+            json_str += jb_line;
+            json_str += "\"recurse\": ";
+            json_str += val.get("recurse").unwrap();
+            json_str += jb_line;
+            json_str += "\"texts\": ";
+            json_str += dquote;
+            json_str += val.get("texts").unwrap();
+            json_str += dquote;
+            json_str += jb_close;
+        }
+        json_str.pop();
+        json_str += "\n}";
+        println!("{}",json_str);
     }
+    if _matches.is_present("csv") {
+        let coma = ",";
+        let line = "\n";
+        let dqte = "\"";
+        let mut csv_str = "TIME,TYPE,IMPORTANT,RECURSE,TEXTS\n".to_string();
+        for (_key,val) in &apo_datas {
+            csv_str += val.get("time").unwrap();
+            csv_str += coma;
+            csv_str += val.get("type").unwrap();
+            csv_str += coma;
+            csv_str += val.get("important").unwrap();
+            csv_str += coma;
+            csv_str += val.get("recurse").unwrap();
+            csv_str += coma;
+            csv_str += dqte;
+            csv_str += val.get("texts").unwrap();
+            csv_str += dqte;
+            csv_str += line;
+        }
+        print!("{}",csv_str);
+    }
+    if _matches.is_present("tsv") {
+        let tab = "\t";
+        let line = "\n";
+        let dqte = "\"";
+        let mut tsv_str = "TIME\tTYPE\tIMPORTANT\tRECURSE\tTEXTS\n".to_string();
+        for (_key,val) in &apo_datas {
+            tsv_str += val.get("time").unwrap();
+            tsv_str += tab;
+            tsv_str += val.get("type").unwrap();
+            tsv_str += tab;
+            tsv_str += val.get("important").unwrap();
+            tsv_str += tab;
+            tsv_str += val.get("recurse").unwrap();
+            tsv_str += tab;
+            tsv_str += dqte;
+            tsv_str += val.get("texts").unwrap();
+            tsv_str += dqte;
+            tsv_str += line;
+        }
+        print!("{}",tsv_str);
+    }
+
     Ok(())
-
-
 
 }
 fn prefix_one_char(arg: &str) -> char {
@@ -105,16 +208,3 @@ fn prefix_one_char(arg: &str) -> char {
 fn skip_one_str_to_i64(arg: &str) -> i64 {
     return arg.chars().skip(1).collect::<String>().parse().unwrap();
 }
-/*
-fn date_detector(arg: &str, nowVal: i64) -> i64 {
-    if arg.chars().nth(0).unwrap() == '+' {
-        let argVal: i64 = arg.chars().skip(1).collect::<String>().parse().unwrap();
-        return nowVal + argVal;
-    }
-    if arg.chars().nth(0).unwrap() == '-' {
-        let argVal: i64 = arg.chars().skip(1).collect::<String>().parse().unwrap();
-        return nowVal - argVal;
-    }
-    return arg.parse().unwrap();
-}
-*/
