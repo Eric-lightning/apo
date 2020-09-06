@@ -2,9 +2,26 @@
 
 termBased Schedule Manager with git-based sync and Simple editable.
 
-## How to use.
+## Concept
 
-- Implementation is not completed yet.
+- rich CLI
+- git-sync
+- git-branches is another calendar (easy to merge)
+- push to remote
+- CLI-One-Line editable.
+- VIM (or env:EDTIOR) editable.
+- manage todays doing 
+
+## Todo
+
+- colornize and rich CLI
+- git sync imp
+- git branches management
+
+## Future
+
+Porting to www service.
+
 
 ## Writable Syntax in File
 
