@@ -19,7 +19,21 @@ pub fn build_cli() -> App<'static, 'static> {
              PrintRAW  -1 --raw       'Print RAW'
              PrintCSV  -c --csv       'Print CSV style'
              PrintTSV  -t --tsv       'Print TSV style'
-             PrintJSON -j --json      'Print JSON Style (beta)'"
+
+             PrintJSON -j --json      'Print JSON Style (beta)'
+
+             ShowALL      --ALL       'Show ALLDay apointments'
+             ShowMRG      --MRG       'Show Morning apointments'
+             ShowDAY      --DAY       'Show Day apointments'
+             ShowNGT      --NGT       'Show Night apointment'
+
+             Schedule  -S --schedule  'Show schedule'
+             Riminder  -R --reminder  'Show reminder'
+             DeadLine  -D --deadline  'Show deadline'
+
+             Important -I --important 'Show important'
+             Recurse   -R --recurse   'Show Recurse'
+
         )
         .arg(//year
 			Arg::with_name("year")
