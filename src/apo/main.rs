@@ -33,7 +33,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
     ////////////////////////////////////////////////////////////////////
-    // GET ENV APO
+    // GET ENV APO DIRECTORY
     let keyword_apo_path = "APO_PATH";
     let default_apo_path = env_home + "/.apo";
     let defined_apo_path = match env::var(keyword_apo_path) {
@@ -68,15 +68,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 
     ////////////////////////////////////////////////////////////////////////
-    // Define File
+    // Define File Name
     let file_path = defined_apo_path.to_string() + "/"
         + &format!("{:04}",date.year() ).to_string() + "/"     // Year(>=CE) & Zero-Padding
         + &format!("{:02}",date.month()).to_string() + "/"     // Month(1-12)& Zero-Padding
         + &format!("{:02}",date.day()  ).to_string() + ".apo"; // Day(1-31)  & Zerp-Padding
     ////////////////////////////////////////////////////////////////////////
-    // Read
+    // Read File
     let mut apo_datas = BTreeMap::new();
     for line_res in BufReader::new(File::open(file_path)?).lines() {
+        // <<<<<<<<<<<<<<<<<<<< A line >>>>>>>>>>>>>>>>>>>>>>>>>>>
         let mut inner_map = HashMap::new();
         //
         let line  = line_res?;
@@ -85,8 +86,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         //
         let time = cols_control.next().unwrap();
         inner_map.insert("time",time.to_string());
+        //TODO: if include META
         let times: Vec<&str> = time.split(":").collect(); // TODO: META Date support! ALL,MRG,DAY,NGT,TASK
-
+        //TODO: fi
         let time_h_num: i64 = times.get(0).unwrap().parse().unwrap();
         let time_m_num: i64 = times.get(1).unwrap().parse().unwrap();
         let time_sum_num: i64 = time_h_num * 60 + time_m_num;
@@ -104,14 +106,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if flag_impt == 1 { inner_map.insert("important","true".to_string());}
         if flag_recs == 0 { inner_map.insert("recurse"  ,"false".to_string());}
         if flag_recs == 1 { inner_map.insert("recurse"  ,"true".to_string());}
-
- let mut text_formating;
-        text_formating = String::new();
-        let mut next  = cols_control.next();
-        text_formating += next.unwrap();
-        next  = cols_control.next();
+        ///////////////////////////////////////////////////////////
+        // 
+        let mut text_formating = String::new();
+        let mut not_first_line     = false;
+        //text_formating = String::new();
+        let mut next           = cols_control.next();
         while None != next {
-            text_formating += " ";
+            if not_first_line {
+                text_formating += " ";
+            }
+            else{
+                not_first_line = true;
+            }
             text_formating += next.unwrap();
             next = cols_control.next();
         }
