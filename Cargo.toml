@@ -14,10 +14,10 @@ build = "build.rs"
 name = "apo"
 path = "src/apo/main.rs"
 
-# Doing by day
-[[bin]]
-name = "dbd"
-path = "src/dbd/main.rs"
+# Doing by day - imprement yet.
+#[[bin]]
+#name = "dbd"
+#path = "src/dbd/main.rs"
 
 
 [dependencies]
