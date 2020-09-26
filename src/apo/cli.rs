@@ -32,8 +32,7 @@ pub fn build_cli() -> App<'static, 'static> {
              DeadLine  -D --deadline  'Show deadline'
 
              Important -I --important 'Show important'
-             Recurse   -R --recurse   'Show Recurse'
-
+             Loop      -L --loop      'Show loop(Recurse/Routine)'"
         )
         .arg(//year
 			Arg::with_name("year")
