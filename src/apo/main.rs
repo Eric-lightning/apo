@@ -10,6 +10,7 @@
 #[macro_use]
 extern crate clap; // args analyze library.
 mod cli; // imp cli module.
+mod output;
 use std::env;
 use std::process;
 use std::fs::File;
@@ -17,7 +18,8 @@ use std::string::String;
 use std::collections::HashMap;
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader};
-use chrono::{TimeZone,Duration};
+use chrono::{TimeZone,Duration,Timelike};
+
 use chrono::prelude::{DateTime, Local, Datelike};
 
 
@@ -39,13 +41,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let defined_apo_path = match env::var(keyword_apo_path) {
         Ok(o)  => o,
         Err(_e) => {
-            println!("Info: No defined in env_var 'APO_PATH', will use `~/.apo`.");
+            eprintln!("Info: No defined in env_var 'APO_PATH', will use `~/.apo`.");
             default_apo_path.to_string()
         }
     };
     ////////////////////////////////////////////////////////////////////
     // Define Date
     let mut date: DateTime<Local> = Local::now();
+    let now_time = date.hour() * 60 + date.minute(); // TODO: use for --next and --previous
     if let Some(o) = _matches.value_of("day") {
         if prefix_one_char(o) == '+' { date = date + Duration::days(skip_one_str_to_i64(o)); }
         else if prefix_one_char(o) == '-' { date = date + Duration::days(0 - skip_one_str_to_i64(o)); }
@@ -65,8 +68,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         else if prefix_one_char(o) == '-' { date = date + Duration::weeks(0 - skip_one_str_to_i64(o)); }
         else { date = Local.ymd(o.parse().unwrap(), date.month(), date.day()).and_hms(0,00,00); }
     };
-
-
     ////////////////////////////////////////////////////////////////////////
     // Define File Name
     let file_path = defined_apo_path.to_string() + "/"
@@ -75,6 +76,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         + &format!("{:02}",date.day()  ).to_string() + ".apo"; // Day(1-31)  & Zerp-Padding
     ////////////////////////////////////////////////////////////////////////
     // Read File
+    let only_next = _matches.is_present("next");
+    let only_prev = _matches.is_present("previous");
     let mut apo_datas = BTreeMap::new();
     for line_res in BufReader::new(File::open(file_path)?).lines() {
         // <<<<<<<<<<<<<<<<<<<< A line >>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -107,7 +110,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if flag_recs == 0 { inner_map.insert("recurse"  ,"false".to_string());}
         if flag_recs == 1 { inner_map.insert("recurse"  ,"true".to_string());}
         ///////////////////////////////////////////////////////////
-        // 
+        // linked description
         let mut text_formating = String::new();
         let mut not_first_line     = false;
         //text_formating = String::new();
@@ -131,81 +134,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("{} : {} -> {}", key, val.get("time").unwrap(), val.get("texts").unwrap());
     }*/
     if _matches.is_present("json") {
-        let mut json_str = String::new();
-        json_str += "{\n";
-        // TODO:キーなしHashMapに変更。で
-        let jb_open  = "\": {\n";
-        let jb_close = "\n},";
-        let jb_line = ",\n";
-        let dquote  = "\"";
-        for (_key,val) in &apo_datas {
-            json_str += dquote;
-            json_str += val.get("time").unwrap();
-            json_str += jb_open;
-            json_str += "\"type\": ";
-            json_str += dquote;
-            json_str += val.get("type").unwrap();
-            json_str += dquote;
-            json_str += jb_line;
-            json_str += "\"important\": ";
-            json_str += val.get("important").unwrap();
-            json_str += jb_line;
-            json_str += "\"recurse\": ";
-            json_str += val.get("recurse").unwrap();
-            json_str += jb_line;
-            json_str += "\"texts\": ";
-            json_str += dquote;
-            json_str += val.get("texts").unwrap();
-            json_str += dquote;
-            json_str += jb_close;
-        }
-        json_str.pop();
-        json_str += "\n}";
-        println!("{}",json_str);
+        println!("{}",output::to_json(&mut apo_datas));
     }
     if _matches.is_present("csv") {
-        let coma = ",";
-        let line = "\n";
-        let dqte = "\"";
-        let mut csv_str = "TIME,TYPE,IMPORTANT,RECURSE,TEXTS\n".to_string();
-        for (_key,val) in &apo_datas {
-            csv_str += val.get("time").unwrap();
-            csv_str += coma;
-            csv_str += val.get("type").unwrap();
-            csv_str += coma;
-            csv_str += val.get("important").unwrap();
-            csv_str += coma;
-            csv_str += val.get("recurse").unwrap();
-            csv_str += coma;
-            csv_str += dqte;
-            csv_str += val.get("texts").unwrap();
-            csv_str += dqte;
-            csv_str += line;
-        }
-        print!("{}",csv_str);
+        println!("{}",output::to_csv(&mut apo_datas));
     }
     if _matches.is_present("tsv") {
-        let tab = "\t";
-        let line = "\n";
-        let dqte = "\"";
-        let mut tsv_str = "TIME\tTYPE\tIMPORTANT\tRECURSE\tTEXTS\n".to_string();
-        for (_key,val) in &apo_datas {
-            tsv_str += val.get("time").unwrap();
-            tsv_str += tab;
-            tsv_str += val.get("type").unwrap();
-            tsv_str += tab;
-            tsv_str += val.get("important").unwrap();
-            tsv_str += tab;
-            tsv_str += val.get("recurse").unwrap();
-            tsv_str += tab;
-            tsv_str += dqte;
-            tsv_str += val.get("texts").unwrap();
-            tsv_str += dqte;
-            tsv_str += line;
-        }
-        print!("{}",tsv_str);
+        println!("{}",output::to_tsv(&mut apo_datas));
     }
-
     Ok(())
 
 }
