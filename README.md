@@ -1,5 +1,10 @@
 # Apo
 
+> Now, Learning Rust Languages.
+> It is not complete first missions.
+> Now that I'm not done with My Main Mission(Research at Univ.)
+> If it calm down research, I want to resume this work.
+
 termBased Schedule Manager with git-based sync and Simple editable.
 
 ## Concept
